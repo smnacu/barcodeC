@@ -192,14 +192,32 @@ var DataManager = {
             timestamp: new Date().toISOString()
         };
 
-        UI.addHistoryItem(newItem, true);
-
         try {
             var stored = localStorage.getItem(this.STORAGE_KEY);
             var existing = stored ? JSON.parse(stored) : [];
+
+            // FILTRO: Si ya existe este EAN, lo sacamos de la lista actual
+            existing = existing.filter(function (item) {
+                return item.ean !== ean;
+            });
+
+            // Agregamos el nuevo al principio
             var updated = [newItem].concat(existing).slice(0, this.MAX_ITEMS);
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify(updated));
-        } catch (e) { }
+
+            // Refrescamos la UI completa para que se vea el orden correcto (el ítem sube al puesto 1)
+            // Esto evita tener duplicados visuales en la lista
+            if (UI.elements.historyList) {
+                UI.elements.historyList.innerHTML = '';
+                for (var i = 0; i < updated.length; i++) {
+                    UI.addHistoryItem(updated[i], false);
+                }
+            }
+        } catch (e) {
+            console.error(e);
+            // Fallback por si falla el storage: agregarlo visualmente igual
+            UI.addHistoryItem(newItem, true);
+        }
     },
 
     clearHistory: function () {
@@ -230,6 +248,8 @@ var Scanner = {
     isProcessing: false,
     facingMode: "user",
     lastScan: { code: null, time: 0 },
+    lastPdfCode: null,
+    lastPdfTime: 0,
     COOLDOWN: 1500,  // Reducido a 1.5s para flujo más rápido
     SAFETY_TIMEOUT: 10000, // 10 segundos máximo de bloqueo
     safetyTimer: null,
@@ -436,16 +456,31 @@ var Scanner = {
 
                     UI.setStatus('OK: ' + desc, 'success');
                     AudioHandler.vibrate([100, 50, 100]);
+
+                    // Guardamos/Actualizamos historial siempre
                     DataManager.saveItem(code, desc, pdfUrl, true);
 
-                    // Abrir PDF - "acto de fe"
-                    if (pdfUrl) {
+                    // LOGICA ANTI-BUCLE:
+                    // Si el código es el mismo que el último escaneado, NO abrimos el PDF de nuevo.
+                    // Solo lo abrimos si es un código "nuevo" en esta sesión de escaneo.
+                    var isRepeated = (self.lastPdfCode === decodedText);
+
+                    // Truco: Forzamos isRepeated a false si pasó mucho tiempo (ej. 10 segundos)
+                    // para permitir re-abrir si el usuario quiere volver a verlo a propósito.
+                    if ((now - self.lastPdfTime) > 10000) isRepeated = false;
+
+                    if (pdfUrl && !isRepeated) {
                         UI.addLog('Abriendo PDF: ' + pdfUrl, 'info');
                         window.open(pdfUrl, '_blank');
                         UI.addLog('PDF abierto en nueva pestaña', 'success');
+                        self.lastPdfCode = decodedText;
+                        self.lastPdfTime = now;
+                    } else if (isRepeated) {
+                        UI.addLog('PDF no abierto (Código repetido)', 'info');
                     } else {
                         UI.addLog('Producto sin PDF asociado', 'warning');
                     }
+
                 } else {
                     UI.setStatus('NO EN CSV: ' + decodedText, 'error');
                     UI.flashEffect('#ef4444');
