@@ -257,16 +257,44 @@
             display: block !important;
         }
 
-        /* LÍNEA ROJA - Simple y estática */
-        .scan-line {
+        /* GUIA DE ESCANEO - Area efectiva */
+        .scan-region {
             position: absolute;
             top: 50%;
-            left: 0;
-            right: 0;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 280px;
+            height: 120px;
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            border-radius: 8px;
+            box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .scan-region::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 10px;
+            right: 10px;
             height: 2px;
             background: var(--brand-red);
-            transform: translateY(-50%);
-            z-index: 10;
+            opacity: 0.8;
+            box-shadow: 0 0 4px var(--brand-red);
+        }
+
+        /* Esquinas resaltadas */
+        .scan-region::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border: 2px solid transparent;
+            /* border-radius: 8px; */
+            /* border-image: linear-gradient(to bottom right, var(--success) 20%, transparent 20%, transparent 80%, var(--success) 80%) 1; */
         }
 
         .switch-camera-btn {
@@ -600,7 +628,7 @@
         <div class="scanner-wrapper">
             <div class="scanner-container">
                 <div id="reader"></div>
-                <div class="scan-line"></div>
+                <div class="scan-region"></div>
                 <button class="switch-camera-btn" onclick="switchCamera()">🔄</button>
             </div>
         </div>

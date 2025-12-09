@@ -309,17 +309,21 @@ var Scanner = {
 
             var config = {
                 fps: 15,
-                qrbox: { width: 280, height: 80 },
+                qrbox: { width: 280, height: 120 }, // Aumentado alto para facilitar encuadre manual
                 aspectRatio: 1.777,
                 disableFlip: true,
+                experimentalFeatures: {
+                    useBarCodeDetectorIfSupported: true
+                },
                 formatsToSupport: [
                     Html5QrcodeSupportedFormats.EAN_13,
                     Html5QrcodeSupportedFormats.EAN_8,
-                    Html5QrcodeSupportedFormats.QR_CODE,
                     Html5QrcodeSupportedFormats.UPC_A,
                     Html5QrcodeSupportedFormats.UPC_E,
-                    Html5QrcodeSupportedFormats.CODE_128,
-                    Html5QrcodeSupportedFormats.CODE_39
+                    Html5QrcodeSupportedFormats.QR_CODE
+                    // Desactivados temporalmente para evitar falsos positivos con ruido
+                    // Html5QrcodeSupportedFormats.CODE_128,
+                    // Html5QrcodeSupportedFormats.CODE_39
                 ]
             };
 
